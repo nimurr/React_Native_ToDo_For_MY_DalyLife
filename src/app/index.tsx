@@ -1,13 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,7 +32,7 @@ type PlannerItem = {
 type SectionMeta = {
   label: string;
   subtitle: string;
-  accent: string;
+  accent: [string, string];
   typeOptions: Array<{ label: string; value: PlannerItemType }>;
 };
 
@@ -41,8 +41,8 @@ const storageKey = 'personal-planner-v1';
 const sectionMeta: Record<PlannerSection, SectionMeta> = {
   university: {
     label: 'University',
-    subtitle: 'Classes, deadlines, and study notes',
-    accent: '#2563eb',
+    subtitle: 'Study plans, deadlines, and course work',
+    accent: ['#2563eb', '#4f46e5'],
     typeOptions: [
       { label: 'Task', value: 'task' },
       { label: 'Exam', value: 'exam' },
@@ -51,8 +51,8 @@ const sectionMeta: Record<PlannerSection, SectionMeta> = {
   },
   office: {
     label: 'Office',
-    subtitle: 'Work blocks, meetings, and follow-ups',
-    accent: '#7c3aed',
+    subtitle: 'Meetings, work blocks, and follow-ups',
+    accent: ['#7c3aed', '#4338ca'],
     typeOptions: [
       { label: 'Task', value: 'task' },
       { label: 'Meeting', value: 'meeting' },
@@ -61,8 +61,8 @@ const sectionMeta: Record<PlannerSection, SectionMeta> = {
   },
   personal: {
     label: 'Personal',
-    subtitle: 'Daily life notes and money tracking',
-    accent: '#0f766e',
+    subtitle: 'Life notes and money management',
+    accent: ['#0f766e', '#14b8a6'],
     typeOptions: [
       { label: 'Task', value: 'task' },
       { label: 'Expense', value: 'expense' },
@@ -160,9 +160,7 @@ export default function HomeScreen() {
       title: draft.title.trim(),
       details: draft.details.trim(),
       dueDate: draft.dueDate || getTodayString(),
-      completed: editingId
-        ? items.find((item) => item.id === editingId)?.completed ?? false
-        : false,
+      completed: editingId ? items.find((item) => item.id === editingId)?.completed ?? false : false,
       type: draft.type,
       amount: draft.section === 'personal' && draft.type !== 'task' ? normalizedAmount : '',
     };
@@ -218,223 +216,236 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <ThemedView type="backgroundElement" style={styles.heroCard}>
-          <ThemedText type="title" style={styles.heroTitle}>
-            Personal Planner
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.heroSubtitle}>
-            Keep your university tasks, office work, and personal money life organized in one private
-            local workspace.
-          </ThemedText>
-        </ThemedView>
+      <LinearGradient colors={['#0f172a', '#111827']} style={styles.backgroundGradient}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <LinearGradient colors={['#2563eb', '#7c3aed']} style={styles.heroCard}>
+            <ThemedText type="title" style={styles.heroTitle}>
+              Personal Planner
+            </ThemedText>
+            <ThemedText type="small" style={styles.heroSubtitle}>
+              Keep university priorities, office work, and personal finance in one calm, private place.
+            </ThemedText>
+          </LinearGradient>
 
-        <View style={styles.summaryRow}>
-          <ThemedView type="backgroundElement" style={styles.summaryCard}>
-            <ThemedText type="smallBold">{currentMeta.label}</ThemedText>
-            <ThemedText type="title" style={styles.summaryNumber}>
-              {sectionSummary.pending}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              pending items
-            </ThemedText>
-          </ThemedView>
-
-          <ThemedView type="backgroundElement" style={styles.summaryCard}>
-            <ThemedText type="smallBold">Completed</ThemedText>
-            <ThemedText type="title" style={styles.summaryNumber}>
-              {sectionSummary.completed}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              checked off
-            </ThemedText>
-          </ThemedView>
-
-          {activeSection === 'personal' ? (
-            <ThemedView type="backgroundElement" style={styles.summaryCard}>
-              <ThemedText type="smallBold">Cash flow</ThemedText>
+          <View style={styles.summaryRow}>
+            <LinearGradient colors={['#111827', '#1f2937']} style={styles.summaryCard}>
+              <ThemedText type="smallBold" style={styles.cardLabel}>
+                {currentMeta.label}
+              </ThemedText>
               <ThemedText type="title" style={styles.summaryNumber}>
-                {sectionSummary.income - sectionSummary.expense >= 0 ? '+' : '-'}
-                {Math.abs(sectionSummary.income - sectionSummary.expense).toFixed(0)}
+                {sectionSummary.pending}
               </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                income minus expenses
+              <ThemedText type="small" style={styles.mutedText}>
+                pending items
               </ThemedText>
-            </ThemedView>
-          ) : null}
-        </View>
+            </LinearGradient>
 
-        <ThemedView type="backgroundElement" style={styles.sectionSwitch}>
-          {(Object.keys(sectionMeta) as PlannerSection[]).map((section) => {
-            const meta = sectionMeta[section];
-            const selected = activeSection === section;
-            return (
-              <Pressable
-                key={section}
-                onPress={() => {
-                  setActiveSection(section);
-                  setDraft(createEmptyDraft(section));
-                  setEditingId(null);
-                }}
-                style={({ pressed }) => [
-                  styles.sectionButton,
-                  selected && { backgroundColor: meta.accent, borderColor: meta.accent },
-                  pressed && styles.sectionButtonPressed,
-                ]}>
-                <ThemedText
-                  type="smallBold"
-                  style={[styles.sectionButtonText, selected && styles.sectionButtonTextSelected]}>
-                  {meta.label}
+            <LinearGradient colors={['#111827', '#1f2937']} style={styles.summaryCard}>
+              <ThemedText type="smallBold" style={styles.cardLabel}>
+                Completed
+              </ThemedText>
+              <ThemedText type="title" style={styles.summaryNumber}>
+                {sectionSummary.completed}
+              </ThemedText>
+              <ThemedText type="small" style={styles.mutedText}>
+                checked off
+              </ThemedText>
+            </LinearGradient>
+
+            {activeSection === 'personal' ? (
+              <LinearGradient colors={['#111827', '#1f2937']} style={styles.summaryCard}>
+                <ThemedText type="smallBold" style={styles.cardLabel}>
+                  Cash flow
                 </ThemedText>
-              </Pressable>
-            );
-          })}
-        </ThemedView>
-
-        <ThemedView type="backgroundElement" style={styles.formCard}>
-          <ThemedText type="smallBold" style={styles.formTitle}>
-            {editingId ? 'Update' : 'Add'} {currentMeta.label} item
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.formSubtitle}>
-            {currentMeta.subtitle}
-          </ThemedText>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Enter title"
-            placeholderTextColor="#8a8a8a"
-            value={draft.title}
-            onChangeText={(value) => setDraft((current) => ({ ...current, title: value }))}
-          />
-
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Add details or notes"
-            placeholderTextColor="#8a8a8a"
-            multiline
-            value={draft.details}
-            onChangeText={(value) => setDraft((current) => ({ ...current, details: value }))}
-          />
-
-          <View style={styles.formRow}>
-            <View style={styles.formCell}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Due date
-              </ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="#8a8a8a"
-                value={draft.dueDate}
-                onChangeText={(value) => setDraft((current) => ({ ...current, dueDate: value }))}
-              />
-            </View>
-
-            <View style={styles.formCell}>
-              <ThemedText type="small" themeColor="textSecondary">
-                {activeSection === 'personal' ? 'Amount' : 'Tag'}
-              </ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder={activeSection === 'personal' ? '120 or -50' : 'Optional'}
-                placeholderTextColor="#8a8a8a"
-                value={draft.amount}
-                onChangeText={(value) => setDraft((current) => ({ ...current, amount: value }))}
-              />
-            </View>
+                <ThemedText type="title" style={styles.summaryNumber}>
+                  {sectionSummary.income - sectionSummary.expense >= 0 ? '+' : '-'}
+                  {Math.abs(sectionSummary.income - sectionSummary.expense).toFixed(0)}
+                </ThemedText>
+                <ThemedText type="small" style={styles.mutedText}>
+                  income minus expenses
+                </ThemedText>
+              </LinearGradient>
+            ) : null}
           </View>
 
-          <View style={styles.typeRow}>
-            {currentMeta.typeOptions.map((option) => {
-              const selected = draft.type === option.value;
+          <View style={styles.sectionSwitch}>
+            {(Object.keys(sectionMeta) as PlannerSection[]).map((section) => {
+              const meta = sectionMeta[section];
+              const selected = activeSection === section;
               return (
                 <Pressable
-                  key={option.value}
-                  onPress={() => setDraft((current) => ({ ...current, type: option.value }))}
+                  key={section}
+                  onPress={() => {
+                    setActiveSection(section);
+                    setDraft(createEmptyDraft(section));
+                    setEditingId(null);
+                  }}
                   style={({ pressed }) => [
-                    styles.typeChip,
-                    selected && { backgroundColor: currentMeta.accent },
+                    styles.sectionButton,
+                    selected && { backgroundColor: meta.accent[0], borderColor: meta.accent[0] },
                     pressed && styles.sectionButtonPressed,
                   ]}>
                   <ThemedText
                     type="smallBold"
-                    style={[styles.typeChipText, selected && styles.typeChipTextSelected]}>
-                    {option.label}
+                    style={[styles.sectionButtonText, selected && styles.sectionButtonTextSelected]}>
+                    {meta.label}
                   </ThemedText>
                 </Pressable>
               );
             })}
           </View>
 
-          <View style={styles.actionRow}>
-            <Pressable style={styles.primaryButton} onPress={handleSubmit}>
-              <ThemedText type="smallBold" style={styles.primaryButtonText}>
-                {editingId ? 'Save changes' : 'Add item'}
-              </ThemedText>
-            </Pressable>
-            {editingId ? (
-              <Pressable style={styles.secondaryButton} onPress={resetForm}>
-                <ThemedText type="smallBold">Cancel</ThemedText>
-              </Pressable>
-            ) : null}
-          </View>
-        </ThemedView>
-
-        <ThemedView type="backgroundElement" style={styles.listCard}>
-          <View style={styles.listHeader}>
-            <ThemedText type="subtitle" style={styles.listTitle}>
-              {currentMeta.label} list
+          <LinearGradient colors={['#f8fafc', '#eef2ff']} style={styles.formCard}>
+            <ThemedText type="smallBold" style={styles.formTitle}>
+              {editingId ? 'Update' : 'Add'} {currentMeta.label} item
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {visibleItems.length} item{visibleItems.length === 1 ? '' : 's'}
+            <ThemedText type="small" style={styles.formSubtitle}>
+              {currentMeta.subtitle}
             </ThemedText>
-          </View>
 
-          {visibleItems.length === 0 ? (
-            <ThemedView type="background" style={styles.emptyState}>
-              <ThemedText type="smallBold">No items yet</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                Add your first task to start building your local planner.
-              </ThemedText>
-            </ThemedView>
-          ) : (
-            visibleItems.map((item) => (
-              <ThemedView key={item.id} type="background" style={styles.itemCard}>
-                <View style={styles.itemTopRow}>
-                  <Pressable onPress={() => toggleComplete(item.id)} style={styles.checkButton}>
-                    <ThemedText type="smallBold">{item.completed ? '✓' : '○'}</ThemedText>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter title"
+              placeholderTextColor="#64748b"
+              value={draft.title}
+              onChangeText={(value) => setDraft((current) => ({ ...current, title: value }))}
+            />
+
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Add details or notes"
+              placeholderTextColor="#64748b"
+              multiline
+              value={draft.details}
+              onChangeText={(value) => setDraft((current) => ({ ...current, details: value }))}
+            />
+
+            <View style={styles.formRow}>
+              <View style={styles.formCell}>
+                <ThemedText type="small" style={styles.fieldLabel}>
+                  Due date
+                </ThemedText>
+                <TextInput
+                  style={styles.input}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#64748b"
+                  value={draft.dueDate}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, dueDate: value }))}
+                />
+              </View>
+
+              <View style={styles.formCell}>
+                <ThemedText type="small" style={styles.fieldLabel}>
+                  {activeSection === 'personal' ? 'Amount' : 'Tag'}
+                </ThemedText>
+                <TextInput
+                  style={styles.input}
+                  placeholder={activeSection === 'personal' ? '120 or -50' : 'Optional'}
+                  placeholderTextColor="#64748b"
+                  value={draft.amount}
+                  onChangeText={(value) => setDraft((current) => ({ ...current, amount: value }))}
+                />
+              </View>
+            </View>
+
+            <View style={styles.typeRow}>
+              {currentMeta.typeOptions.map((option) => {
+                const selected = draft.type === option.value;
+                return (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => setDraft((current) => ({ ...current, type: option.value }))}
+                    style={({ pressed }) => [
+                      styles.typeChip,
+                      selected && { backgroundColor: currentMeta.accent[0] },
+                      pressed && styles.sectionButtonPressed,
+                    ]}>
+                    <ThemedText
+                      type="smallBold"
+                      style={[styles.typeChipText, selected && styles.typeChipTextSelected]}>
+                      {option.label}
+                    </ThemedText>
                   </Pressable>
-                  <View style={styles.itemContent}>
-                    <ThemedText type="smallBold" style={item.completed ? styles.completedText : null}>
-                      {item.title}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {item.details || 'No details added'}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {item.dueDate} • {item.type}
-                      {item.amount ? ` • ${item.amount}` : ''}
-                    </ThemedText>
+                );
+              })}
+            </View>
+
+            <View style={styles.actionRow}>
+              <Pressable style={styles.primaryButton} onPress={handleSubmit}>
+                <ThemedText type="smallBold" style={styles.primaryButtonText}>
+                  {editingId ? 'Save changes' : 'Add item'}
+                </ThemedText>
+              </Pressable>
+              {editingId ? (
+                <Pressable style={styles.secondaryButton} onPress={resetForm}>
+                  <ThemedText type="smallBold" style={styles.secondaryButtonText}>
+                    Cancel
+                  </ThemedText>
+                </Pressable>
+              ) : null}
+            </View>
+          </LinearGradient>
+
+          <LinearGradient colors={['#111827', '#0f172a']} style={styles.listCard}>
+            <View style={styles.listHeader}>
+              <ThemedText type="subtitle" style={styles.listTitle}>
+                {currentMeta.label} list
+              </ThemedText>
+              <ThemedText type="small" style={styles.mutedText}>
+                {visibleItems.length} item{visibleItems.length === 1 ? '' : 's'}
+              </ThemedText>
+            </View>
+
+            {visibleItems.length === 0 ? (
+              <View style={styles.emptyState}>
+                <ThemedText type="smallBold" style={styles.emptyStateTitle}>
+                  No items yet
+                </ThemedText>
+                <ThemedText type="small" style={styles.mutedText}>
+                  Add your first task to start building your local planner.
+                </ThemedText>
+              </View>
+            ) : (
+              visibleItems.map((item) => (
+                <View key={item.id} style={styles.itemCard}>
+                  <View style={styles.itemTopRow}>
+                    <Pressable onPress={() => toggleComplete(item.id)} style={styles.checkButton}>
+                      <ThemedText type="smallBold" style={styles.checkButtonText}>
+                        {item.completed ? '✓' : '○'}
+                      </ThemedText>
+                    </Pressable>
+                    <View style={styles.itemContent}>
+                      <ThemedText type="smallBold" style={item.completed ? styles.completedText : styles.itemTitle}>
+                        {item.title}
+                      </ThemedText>
+                      <ThemedText type="small" style={styles.mutedText}>
+                        {item.details || 'No details added'}
+                      </ThemedText>
+                      <ThemedText type="small" style={styles.mutedText}>
+                        {item.dueDate} • {item.type}
+                        {item.amount ? ` • ${item.amount}` : ''}
+                      </ThemedText>
+                    </View>
+                  </View>
+
+                  <View style={styles.itemActions}>
+                    <Pressable onPress={() => beginEdit(item)} style={styles.actionLink}>
+                      <ThemedText type="smallBold" style={styles.actionLinkText}>
+                        Edit
+                      </ThemedText>
+                    </Pressable>
+                    <Pressable onPress={() => deleteItem(item.id)} style={styles.actionLink}>
+                      <ThemedText type="smallBold" style={styles.actionLinkText}>
+                        Delete
+                      </ThemedText>
+                    </Pressable>
                   </View>
                 </View>
-
-                <View style={styles.itemActions}>
-                  <Pressable onPress={() => beginEdit(item)} style={styles.actionLink}>
-                    <ThemedText type="smallBold" style={styles.actionLinkText}>
-                      Edit
-                    </ThemedText>
-                  </Pressable>
-                  <Pressable onPress={() => deleteItem(item.id)} style={styles.actionLink}>
-                    <ThemedText type="smallBold" style={styles.actionLinkText}>
-                      Delete
-                    </ThemedText>
-                  </Pressable>
-                </View>
-              </ThemedView>
-            ))
-          )}
-        </ThemedView>
-      </ScrollView>
+              ))
+            )}
+          </LinearGradient>
+        </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -442,8 +453,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.three,
-    paddingBottom: Platform.OS === 'web' ? Spacing.five : Spacing.four,
+    backgroundColor: '#020617',
+  },
+  backgroundGradient: {
+    flex: 1,
   },
   scrollContent: {
     paddingTop: Spacing.three,
@@ -452,11 +465,13 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     width: '100%',
     alignSelf: 'center',
+    paddingHorizontal: Spacing.two,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#020617',
   },
   heroCard: {
     padding: Spacing.four,
@@ -466,9 +481,11 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 32,
     lineHeight: 36,
+    color: '#ffffff',
   },
   heroSubtitle: {
     maxWidth: 560,
+    color: '#e2e8f0',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -482,29 +499,36 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     gap: Spacing.one,
   },
+  cardLabel: {
+    color: '#e2e8f0',
+  },
   summaryNumber: {
     fontSize: 28,
     lineHeight: 32,
+    color: '#ffffff',
+  },
+  mutedText: {
+    color: '#94a3b8',
   },
   sectionSwitch: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Spacing.four,
+    padding: Spacing.one,
   },
   sectionButton: {
     borderWidth: 1,
-    borderColor: '#d0d7de',
+    borderColor: '#334155',
     borderRadius: 999,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
+    backgroundColor: '#0f172a',
   },
   sectionButtonPressed: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
   sectionButtonText: {
-    color: '#111827',
+    color: '#e2e8f0',
   },
   sectionButtonTextSelected: {
     color: '#ffffff',
@@ -516,13 +540,18 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 20,
+    color: '#111827',
   },
   formSubtitle: {
     marginBottom: Spacing.one,
+    color: '#475569',
+  },
+  fieldLabel: {
+    color: '#475569',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#cbd5e1',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
@@ -550,9 +579,10 @@ const styles = StyleSheet.create({
   typeChip: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#cbd5e1',
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
+    backgroundColor: '#f8fafc',
   },
   typeChipText: {
     color: '#111827',
@@ -580,7 +610,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#cbd5e1',
+    backgroundColor: '#ffffff',
+  },
+  secondaryButtonText: {
+    color: '#111827',
   },
   listCard: {
     padding: Spacing.three,
@@ -594,16 +628,22 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     fontSize: 22,
+    color: '#f8fafc',
   },
   emptyState: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
+    backgroundColor: '#1e293b',
     gap: Spacing.one,
+  },
+  emptyStateTitle: {
+    color: '#f8fafc',
   },
   itemCard: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
     gap: Spacing.two,
+    backgroundColor: '#1e293b',
   },
   itemTopRow: {
     flexDirection: 'row',
@@ -614,17 +654,24 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  checkButtonText: {
+    color: '#f8fafc',
   },
   itemContent: {
     flex: 1,
     gap: Spacing.one,
   },
+  itemTitle: {
+    color: '#f8fafc',
+  },
   completedText: {
     textDecorationLine: 'line-through',
     opacity: 0.7,
+    color: '#94a3b8',
   },
   itemActions: {
     marginLeft: 40,
@@ -635,6 +682,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   actionLinkText: {
-    color: '#2563eb',
+    color: '#60a5fa',
   },
 });
