@@ -38,11 +38,20 @@ export function TabButton({
   iconSource,
   ...props
 }: TabTriggerSlotProps & { iconSource: any }) {
+  const isActive = Boolean(isFocused);
+
   return (
     <Pressable {...props} style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
-      <ThemedView type={isFocused ? 'backgroundSelected' : 'backgroundElement'} style={styles.tabButtonView}>
-        <Image source={iconSource} style={styles.tabIcon} contentFit="contain" />
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+      <ThemedView
+        type={isActive ? 'backgroundSelected' : 'backgroundElement'}
+        style={[styles.tabButtonView, isActive && styles.tabButtonViewActive]}>
+        <Image
+          source={iconSource}
+          style={styles.tabIcon}
+          contentFit="contain"
+          tintColor={isActive ? '#2563eb' : '#64748b'}
+        />
+        <ThemedText type="small" themeColor={isActive ? 'text' : 'textSecondary'}>
           {children}
         </ThemedText>
       </ThemedView>
@@ -80,13 +89,18 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
     justifyContent: 'center',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.8,
   },
   tabButtonView: {
     flexDirection: 'row',
@@ -97,6 +111,11 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     minWidth: 100,
     justifyContent: 'center',
+  },
+  tabButtonViewActive: {
+    backgroundColor: '#dbeafe',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
   },
   tabIcon: {
     width: 16,

@@ -9,9 +9,9 @@ export default function AppTabs() {
 
   return (
     <NativeTabs
-      backgroundColor={colors.background}
+      backgroundColor="#f8fafc"
       indicatorColor="#2563eb"
-      labelStyle={{ selected: { color: '#2563eb' }, default: { color: colors.textSecondary } }}>
+      labelStyle={{ selected: { color: '#2563eb' }, default: { color: '#64748b' } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Planner</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

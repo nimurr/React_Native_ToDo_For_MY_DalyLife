@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,19 +7,24 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 export default function InsightsScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
-      <LinearGradient colors={['#0f172a', '#111827']} style={styles.backgroundGradient}>
+      <View style={styles.backgroundGradient}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <LinearGradient colors={['#2563eb', '#7c3aed']} style={styles.heroCard}>
+          <View style={styles.heroCard}>
+            <View style={styles.heroBadge}>
+              <ThemedText type="smallBold" style={styles.heroBadgeText}>
+                Weekly overview
+              </ThemedText>
+            </View>
             <ThemedText type="title" style={styles.heroTitle}>
-              Weekly overview
+              Calm, focused, and ready.
             </ThemedText>
             <ThemedText type="small" style={styles.heroSubtitle}>
-              A calm snapshot of your priorities, work rhythm, and personal balance.
+              A polished snapshot of your priorities, work rhythm, and personal balance.
             </ThemedText>
-          </LinearGradient>
+          </View>
 
           <View style={styles.grid}>
-            <LinearGradient colors={['#111827', '#1f2937']} style={styles.statCard}>
+            <View style={styles.statCard}>
               <ThemedText type="smallBold" style={styles.cardLabel}>
                 Focus today
               </ThemedText>
@@ -30,9 +34,9 @@ export default function InsightsScreen() {
               <ThemedText type="small" style={styles.mutedText}>
                 important tasks ready
               </ThemedText>
-            </LinearGradient>
+            </View>
 
-            <LinearGradient colors={['#111827', '#1f2937']} style={styles.statCard}>
+            <View style={styles.statCard}>
               <ThemedText type="smallBold" style={styles.cardLabel}>
                 Meetings
               </ThemedText>
@@ -42,10 +46,10 @@ export default function InsightsScreen() {
               <ThemedText type="small" style={styles.mutedText}>
                 this week
               </ThemedText>
-            </LinearGradient>
+            </View>
           </View>
 
-          <LinearGradient colors={['#f8fafc', '#eef2ff']} style={styles.panelCard}>
+          <View style={styles.panelCard}>
             <ThemedText type="subtitle" style={styles.panelTitle}>
               Smart plan
             </ThemedText>
@@ -64,18 +68,18 @@ export default function InsightsScreen() {
                 • Check personal budget after dinner
               </ThemedText>
             </View>
-          </LinearGradient>
+          </View>
 
-          <LinearGradient colors={['#111827', '#0f172a']} style={styles.panelCardDark}>
+          <View style={styles.panelCardDark}>
             <ThemedText type="subtitle" style={styles.panelTitleDark}>
               Quick notes
             </ThemedText>
-            <ThemedText type="small" style={styles.mutedText}>
+            <ThemedText type="small" style={styles.mutedTextDark}>
               Keep this workspace simple and private. All entries are stored locally and stay on your device.
             </ThemedText>
-          </LinearGradient>
+          </View>
         </ScrollView>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 }
@@ -83,10 +87,11 @@ export default function InsightsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#f8fafc',
   },
   backgroundGradient: {
     flex: 1,
+    backgroundColor: '#f8fafc',
   },
   scrollContent: {
     paddingTop: Spacing.three,
@@ -101,14 +106,33 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     borderRadius: Spacing.four,
     gap: Spacing.one,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+  heroBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.half,
+    borderRadius: 999,
+    backgroundColor: '#dbeafe',
+  },
+  heroBadgeText: {
+    color: '#2563eb',
   },
   heroTitle: {
     fontSize: 30,
     lineHeight: 34,
-    color: '#ffffff',
+    color: '#0f172a',
   },
   heroSubtitle: {
-    color: '#e2e8f0',
+    color: '#64748b',
+    maxWidth: 560,
   },
   grid: {
     flexDirection: 'row',
@@ -121,27 +145,44 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.three,
     gap: Spacing.one,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   cardLabel: {
-    color: '#e2e8f0',
+    color: '#64748b',
   },
   statNumber: {
     fontSize: 28,
     lineHeight: 32,
-    color: '#ffffff',
+    color: '#0f172a',
   },
   mutedText: {
-    color: '#94a3b8',
+    color: '#64748b',
   },
   panelCard: {
     padding: Spacing.three,
     borderRadius: Spacing.four,
     gap: Spacing.one,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   panelCardDark: {
     padding: Spacing.three,
     borderRadius: Spacing.four,
     gap: Spacing.one,
+    backgroundColor: '#0f172a',
   },
   panelTitle: {
     color: '#111827',
@@ -154,5 +195,8 @@ const styles = StyleSheet.create({
   },
   panelText: {
     color: '#334155',
+  },
+  mutedTextDark: {
+    color: '#cbd5e1',
   },
 });

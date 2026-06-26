@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -216,19 +215,19 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <LinearGradient colors={['#0f172a', '#111827']} style={styles.backgroundGradient}>
+      <View style={styles.backgroundGradient}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <LinearGradient colors={['#2563eb', '#7c3aed']} style={styles.heroCard}>
+          <View style={styles.heroCard}>
             <ThemedText type="title" style={styles.heroTitle}>
               Personal Planner
             </ThemedText>
             <ThemedText type="small" style={styles.heroSubtitle}>
               Keep university priorities, office work, and personal finance in one calm, private place.
             </ThemedText>
-          </LinearGradient>
+          </View>
 
           <View style={styles.summaryRow}>
-            <LinearGradient colors={['#111827', '#1f2937']} style={styles.summaryCard}>
+            <View style={styles.summaryCard}>
               <ThemedText type="smallBold" style={styles.cardLabel}>
                 {currentMeta.label}
               </ThemedText>
@@ -238,9 +237,9 @@ export default function HomeScreen() {
               <ThemedText type="small" style={styles.mutedText}>
                 pending items
               </ThemedText>
-            </LinearGradient>
+            </View>
 
-            <LinearGradient colors={['#111827', '#1f2937']} style={styles.summaryCard}>
+            <View style={styles.summaryCard}>
               <ThemedText type="smallBold" style={styles.cardLabel}>
                 Completed
               </ThemedText>
@@ -250,10 +249,10 @@ export default function HomeScreen() {
               <ThemedText type="small" style={styles.mutedText}>
                 checked off
               </ThemedText>
-            </LinearGradient>
+            </View>
 
             {activeSection === 'personal' ? (
-              <LinearGradient colors={['#111827', '#1f2937']} style={styles.summaryCard}>
+              <View style={styles.summaryCard}>
                 <ThemedText type="smallBold" style={styles.cardLabel}>
                   Cash flow
                 </ThemedText>
@@ -264,7 +263,7 @@ export default function HomeScreen() {
                 <ThemedText type="small" style={styles.mutedText}>
                   income minus expenses
                 </ThemedText>
-              </LinearGradient>
+              </View>
             ) : null}
           </View>
 
@@ -295,7 +294,7 @@ export default function HomeScreen() {
             })}
           </View>
 
-          <LinearGradient colors={['#f8fafc', '#eef2ff']} style={styles.formCard}>
+          <View style={styles.formCard}>
             <ThemedText type="smallBold" style={styles.formTitle}>
               {editingId ? 'Update' : 'Add'} {currentMeta.label} item
             </ThemedText>
@@ -384,9 +383,9 @@ export default function HomeScreen() {
                 </Pressable>
               ) : null}
             </View>
-          </LinearGradient>
+          </View>
 
-          <LinearGradient colors={['#111827', '#0f172a']} style={styles.listCard}>
+          <View style={styles.listCard}>
             <View style={styles.listHeader}>
               <ThemedText type="subtitle" style={styles.listTitle}>
                 {currentMeta.label} list
@@ -443,9 +442,9 @@ export default function HomeScreen() {
                 </View>
               ))
             )}
-          </LinearGradient>
+          </View>
         </ScrollView>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 }
@@ -453,10 +452,11 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#020617',
+    backgroundColor: '#f8fafc',
   },
   backgroundGradient: {
     flex: 1,
+    backgroundColor: '#f8fafc',
   },
   scrollContent: {
     paddingTop: Spacing.three,
@@ -471,21 +471,29 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#020617',
+    backgroundColor: '#f8fafc',
   },
   heroCard: {
     padding: Spacing.four,
     borderRadius: Spacing.four,
     gap: Spacing.one,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
   },
   heroTitle: {
     fontSize: 32,
     lineHeight: 36,
-    color: '#ffffff',
+    color: '#0f172a',
   },
   heroSubtitle: {
     maxWidth: 560,
-    color: '#e2e8f0',
+    color: '#64748b',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -498,17 +506,25 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.three,
     gap: Spacing.one,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   cardLabel: {
-    color: '#e2e8f0',
+    color: '#64748b',
   },
   summaryNumber: {
     fontSize: 28,
     lineHeight: 32,
-    color: '#ffffff',
+    color: '#0f172a',
   },
   mutedText: {
-    color: '#94a3b8',
+    color: '#64748b',
   },
   sectionSwitch: {
     flexDirection: 'row',
@@ -518,17 +534,17 @@ const styles = StyleSheet.create({
   },
   sectionButton: {
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#dbeafe',
     borderRadius: 999,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#f8fbff',
   },
   sectionButtonPressed: {
     opacity: 0.85,
   },
   sectionButtonText: {
-    color: '#e2e8f0',
+    color: '#334155',
   },
   sectionButtonTextSelected: {
     color: '#ffffff',
@@ -537,27 +553,35 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.four,
     gap: Spacing.two,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   formTitle: {
     fontSize: 20,
-    color: '#111827',
+    color: '#0f172a',
   },
   formSubtitle: {
     marginBottom: Spacing.one,
-    color: '#475569',
+    color: '#64748b',
   },
   fieldLabel: {
-    color: '#475569',
+    color: '#64748b',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#dbe3ec',
     borderRadius: Spacing.two,
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     minHeight: 44,
-    color: '#111827',
-    backgroundColor: '#ffffff',
+    color: '#0f172a',
+    backgroundColor: '#f8fafc',
   },
   textArea: {
     minHeight: 88,
@@ -579,13 +603,13 @@ const styles = StyleSheet.create({
   typeChip: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#dbe3ec',
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.two,
     backgroundColor: '#f8fafc',
   },
   typeChipText: {
-    color: '#111827',
+    color: '#0f172a',
   },
   typeChipTextSelected: {
     color: '#ffffff',
@@ -601,6 +625,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
     backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   primaryButtonText: {
     color: '#ffffff',
@@ -610,16 +639,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#dbe3ec',
     backgroundColor: '#ffffff',
   },
   secondaryButtonText: {
-    color: '#111827',
+    color: '#0f172a',
   },
   listCard: {
     padding: Spacing.three,
     borderRadius: Spacing.four,
     gap: Spacing.two,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: '#94a3b8',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
   listHeader: {
     flexDirection: 'row',
@@ -628,22 +665,26 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     fontSize: 22,
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   emptyState: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
-    backgroundColor: '#1e293b',
+    backgroundColor: '#f8fafc',
     gap: Spacing.one,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   emptyStateTitle: {
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   itemCard: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
     gap: Spacing.two,
-    backgroundColor: '#1e293b',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   itemTopRow: {
     flexDirection: 'row',
@@ -654,24 +695,25 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#475569',
+    borderColor: '#cbd5e1',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
   },
   checkButtonText: {
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   itemContent: {
     flex: 1,
     gap: Spacing.one,
   },
   itemTitle: {
-    color: '#f8fafc',
+    color: '#0f172a',
   },
   completedText: {
     textDecorationLine: 'line-through',
     opacity: 0.7,
-    color: '#94a3b8',
+    color: '#64748b',
   },
   itemActions: {
     marginLeft: 40,
@@ -682,6 +724,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
   },
   actionLinkText: {
-    color: '#60a5fa',
+    color: '#2563eb',
   },
 });
