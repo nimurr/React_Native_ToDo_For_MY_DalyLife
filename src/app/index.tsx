@@ -4,6 +4,7 @@ import {
   Alert,
   Animated,
   Easing,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -280,30 +281,36 @@ export default function HomeScreen() {
   };
 
   const deleteItem = (itemId: string) => {
-    Alert.alert('Delete this item?', 'This will remove it from your planner.', [
+    const targetItem = items.find((item) => item.id === itemId);
+
+    if (!targetItem) {
+      showToast('Could not find that item.', 'error');
+      return;
+    }
+
+    const removeConfirmedItem = () => {
+      setItems((current) => current.filter((item) => item.id !== itemId));
+
+      if (editingId === itemId) {
+        resetForm();
+      }
+
+      showToast(`Deleted "${targetItem.title}".`);
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(`Delete "${targetItem.title}"? This will remove it from your planner.`);
+
+      if (confirmed) {
+        removeConfirmedItem();
+      }
+
+      return;
+    }
+
+    Alert.alert('Delete this item?', `Delete "${targetItem.title}" from your planner?`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          let didDelete = false;
-
-          setItems((current) => {
-            if (!current.some((item) => item.id === itemId)) {
-              return current;
-            }
-
-            didDelete = true;
-            return current.filter((item) => item.id !== itemId);
-          });
-
-          if (editingId === itemId) {
-            resetForm();
-          }
-
-          showToast(didDelete ? 'Item deleted successfully.' : 'Could not find that item.', didDelete ? 'success' : 'error');
-        },
-      },
+      { text: 'Delete', style: 'destructive', onPress: removeConfirmedItem },
     ]);
   };
 
@@ -421,7 +428,7 @@ export default function HomeScreen() {
             <TextInput
               style={styles.input}
               placeholder="Enter title"
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#000000"
               value={draft.title}
               onChangeText={(value) => setDraft((current) => ({ ...current, title: value }))}
             />
@@ -429,7 +436,7 @@ export default function HomeScreen() {
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Add details or notes"
-              placeholderTextColor="#64748b"
+              placeholderTextColor="#000000"
               multiline
               value={draft.details}
               onChangeText={(value) => setDraft((current) => ({ ...current, details: value }))}
@@ -454,7 +461,7 @@ export default function HomeScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder={activeSection === 'personal' ? '120 or -50' : 'Optional'}
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor="#000000"
                   value={draft.amount}
                   onChangeText={(value) => setDraft((current) => ({ ...current, amount: value }))}
                 />
@@ -714,7 +721,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     maxWidth: 560,
-    color: '#64748b',
+    color: '#0f172a',
   },
   summaryRow: {
     flexDirection: 'row',
@@ -737,7 +744,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardLabel: {
-    color: '#64748b',
+    color: '#0f172a',
   },
   summaryNumber: {
     fontSize: 28,
@@ -745,7 +752,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   mutedText: {
-    color: '#64748b',
+    color: '#0f172a',
   },
   sectionSwitch: {
     flexDirection: 'row',
@@ -759,16 +766,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
-    backgroundColor: '#f8fbff',
+    backgroundColor: '#ffffff',
   },
   sectionButtonPressed: {
     opacity: 0.85,
   },
   sectionButtonText: {
-    color: '#334155',
+    color: '#0f172a',
   },
   sectionButtonTextSelected: {
-    color: '#ffffff',
+    color: '#0f172a',
   },
   formCard: {
     padding: Spacing.three,
@@ -789,10 +796,10 @@ const styles = StyleSheet.create({
   },
   formSubtitle: {
     marginBottom: Spacing.one,
-    color: '#64748b',
+    color: '#0f172a',
   },
   fieldLabel: {
-    color: '#64748b',
+    color: '#0f172a',
   },
   input: {
     borderWidth: 1,
@@ -898,7 +905,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   typeChipTextSelected: {
-    color: '#ffffff',
+    color: '#0f172a',
   },
   actionRow: {
     flexDirection: 'row',
@@ -910,7 +917,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 999,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#dbeafe',
     shadowColor: '#2563eb',
     shadowOpacity: 0.2,
     shadowRadius: 12,
@@ -918,7 +925,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   primaryButtonText: {
-    color: '#ffffff',
+    color: '#0f172a',
   },
   secondaryButton: {
     paddingVertical: Spacing.two,
@@ -1000,7 +1007,7 @@ const styles = StyleSheet.create({
   completedText: {
     textDecorationLine: 'line-through',
     opacity: 0.7,
-    color: '#64748b',
+    color: '#0f172a',
   },
   itemActions: {
     marginLeft: 60,
@@ -1015,6 +1022,11 @@ const styles = StyleSheet.create({
   },
   deleteActionLink: {
     paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderRadius: 999,
+    backgroundColor: '#fee2e2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
   },
   deleteActionLinkText: {
     color: '#dc2626',
@@ -1029,7 +1041,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.three,
-    backgroundColor: '#16a34a',
+    backgroundColor: '#dcfce7',
     shadowColor: '#0f172a',
     shadowOpacity: 0.18,
     shadowRadius: 18,
@@ -1037,10 +1049,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   toastError: {
-    backgroundColor: '#dc2626',
+    backgroundColor: '#fee2e2',
   },
   toastText: {
-    color: '#ffffff',
+    color: '#000000',
     textAlign: 'center',
   },
 });
