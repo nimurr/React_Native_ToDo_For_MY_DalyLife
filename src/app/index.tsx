@@ -1,12 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
+  Easing,
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
-  View
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,7 +34,12 @@ type SectionMeta = {
   label: string;
   subtitle: string;
   accent: [string, string];
-  typeOptions: Array<{ label: string; value: PlannerItemType }>;
+  typeOptions: { label: string; value: PlannerItemType }[];
+};
+
+type ToastMessage = {
+  text: string;
+  type: 'success' | 'error';
 };
 
 const storageKey = 'personal-planner-v1';
@@ -76,12 +83,37 @@ const createEmptyDraft = (section: PlannerSection) => ({
   details: '',
   dueDate: '',
   amount: '',
-  type: sectionMeta[section].typeOptions[0].value as PlannerItemType,
+  type: sectionMeta[section].typeOptions[0].value,
 });
 
-function getTodayString() {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
+function padDatePart(value: number) {
+  return `${value}`.padStart(2, '0');
+}
+
+function formatDateTime(date: Date) {
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())} ${padDatePart(
+    date.getHours(),
+  )}:${padDatePart(date.getMinutes())}`;
+}
+
+function parseDateTime(value: string) {
+  const fallback = new Date();
+  fallback.setHours(9, 0, 0, 0);
+
+  if (!value) {
+    return fallback;
+  }
+
+  const [datePart, timePart = '09:00'] = value.split(' ');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+
+  if (!year || !month || !day) {
+    return fallback;
+  }
+
+  const parsed = new Date(year, month - 1, day, hour || 0, minute || 0, 0, 0);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
 export default function HomeScreen() {
@@ -90,17 +122,30 @@ export default function HomeScreen() {
   const [activeSection, setActiveSection] = useState<PlannerSection>('university');
   const [draft, setDraft] = useState(createEmptyDraft('university'));
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (text: string, type: ToastMessage['type'] = 'success') => {
+    if (toastTimer.current) {
+      clearTimeout(toastTimer.current);
+    }
+
+    setToast({ text, type });
+    toastTimer.current = setTimeout(() => setToast(null), 2400);
+  };
 
   useEffect(() => {
     const loadItems = async () => {
       try {
         const raw = await AsyncStorage.getItem(storageKey);
         if (raw) {
-          const parsed = JSON.parse(raw) as PlannerItem[];
-          setItems(parsed);
+          setItems(JSON.parse(raw) as PlannerItem[]);
         }
       } catch (error) {
         console.warn('Unable to load planner data', error);
+        showToast('Unable to load planner data.', 'error');
       } finally {
         setLoading(false);
       }
@@ -113,9 +158,36 @@ export default function HomeScreen() {
     if (!loading) {
       AsyncStorage.setItem(storageKey, JSON.stringify(items)).catch((error) => {
         console.warn('Unable to save planner data', error);
+        showToast('Unable to save latest change.', 'error');
       });
     }
   }, [items, loading]);
+
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 850,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
+    animation.start();
+    return () => animation.stop();
+  }, [loading, spinValue]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) {
+        clearTimeout(toastTimer.current);
+      }
+    };
+  }, []);
 
   const visibleItems = useMemo(() => {
     return [...items]
@@ -129,7 +201,8 @@ export default function HomeScreen() {
     const pending = sectionItems.length - completed;
     const amounts = sectionItems
       .filter((item) => item.section === 'personal' && item.amount)
-      .map((item) => Number(item.amount));
+      .map((item) => Number(item.amount))
+      .filter((amount) => Number.isFinite(amount));
     const income = amounts.filter((amount) => amount > 0).reduce((sum, amount) => sum + amount, 0);
     const expense = Math.abs(amounts.filter((amount) => amount < 0).reduce((sum, amount) => sum + amount, 0));
 
@@ -139,17 +212,26 @@ export default function HomeScreen() {
   const resetForm = () => {
     setDraft(createEmptyDraft(activeSection));
     setEditingId(null);
+    setDatePickerOpen(false);
+  };
+
+  const adjustDraftDateTime = (changeDate: (date: Date) => void) => {
+    const nextDate = parseDateTime(draft.dueDate);
+    changeDate(nextDate);
+    setDraft((current) => ({ ...current, dueDate: formatDateTime(nextDate) }));
   };
 
   const handleSubmit = () => {
     if (!draft.title.trim()) {
       Alert.alert('Need a title', 'Please add a short title before saving.');
+      showToast('Please add a title first.', 'error');
       return;
     }
 
     const normalizedAmount = draft.amount.trim();
     if (draft.section === 'personal' && draft.type !== 'task' && !normalizedAmount) {
       Alert.alert('Need an amount', 'Please add a value for this money entry.');
+      showToast('Please add an amount first.', 'error');
       return;
     }
 
@@ -158,7 +240,7 @@ export default function HomeScreen() {
       section: draft.section,
       title: draft.title.trim(),
       details: draft.details.trim(),
-      dueDate: draft.dueDate || getTodayString(),
+      dueDate: draft.dueDate || formatDateTime(new Date()),
       completed: editingId ? items.find((item) => item.id === editingId)?.completed ?? false : false,
       type: draft.type,
       amount: draft.section === 'personal' && draft.type !== 'task' ? normalizedAmount : '',
@@ -166,8 +248,10 @@ export default function HomeScreen() {
 
     if (editingId) {
       setItems((current) => current.map((item) => (item.id === editingId ? payload : item)));
+      showToast('Item updated successfully.');
     } else {
       setItems((current) => [payload, ...current]);
+      showToast('Item added successfully.');
     }
 
     resetForm();
@@ -184,12 +268,15 @@ export default function HomeScreen() {
       amount: item.amount,
       type: item.type,
     });
+    setDatePickerOpen(false);
+    showToast('Editing selected item.');
   };
 
   const toggleComplete = (itemId: string) => {
     setItems((current) =>
       current.map((item) => (item.id === itemId ? { ...item, completed: !item.completed } : item)),
     );
+    showToast('Item status updated.');
   };
 
   const deleteItem = (itemId: string) => {
@@ -198,17 +285,46 @@ export default function HomeScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => setItems((current) => current.filter((item) => item.id !== itemId)),
+        onPress: () => {
+          let didDelete = false;
+
+          setItems((current) => {
+            if (!current.some((item) => item.id === itemId)) {
+              return current;
+            }
+
+            didDelete = true;
+            return current.filter((item) => item.id !== itemId);
+          });
+
+          if (editingId === itemId) {
+            resetForm();
+          }
+
+          showToast(didDelete ? 'Item deleted successfully.' : 'Could not find that item.', didDelete ? 'success' : 'error');
+        },
       },
     ]);
   };
 
+  const selectSection = (section: PlannerSection) => {
+    setActiveSection(section);
+    setDraft(createEmptyDraft(section));
+    setEditingId(null);
+    setDatePickerOpen(false);
+    showToast(`${sectionMeta[section].label} selected.`);
+  };
+
   const currentMeta = sectionMeta[activeSection];
+  const spin = spinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
 
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ThemedText type="subtitle">Loading planner…</ThemedText>
+        <Animated.View style={[styles.spinner, { transform: [{ rotate: spin }] }]} />
+        <ThemedText type="subtitle" style={styles.loadingText}>
+          Loading planner...
+        </ThemedText>
       </ThemedView>
     );
   }
@@ -216,7 +332,11 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.backgroundGradient}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentInsetAdjustmentBehavior="automatic">
           <View style={styles.heroCard}>
             <ThemedText type="title" style={styles.heroTitle}>
               Personal Planner
@@ -274,11 +394,7 @@ export default function HomeScreen() {
               return (
                 <Pressable
                   key={section}
-                  onPress={() => {
-                    setActiveSection(section);
-                    setDraft(createEmptyDraft(section));
-                    setEditingId(null);
-                  }}
+                  onPress={() => selectSection(section)}
                   style={({ pressed }) => [
                     styles.sectionButton,
                     selected && { backgroundColor: meta.accent[0], borderColor: meta.accent[0] },
@@ -322,15 +438,13 @@ export default function HomeScreen() {
             <View style={styles.formRow}>
               <View style={styles.formCell}>
                 <ThemedText type="small" style={styles.fieldLabel}>
-                  Due date
+                  Date & time
                 </ThemedText>
-                <TextInput
-                  style={styles.input}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#64748b"
-                  value={draft.dueDate}
-                  onChangeText={(value) => setDraft((current) => ({ ...current, dueDate: value }))}
-                />
+                <Pressable style={styles.pickerButton} onPress={() => setDatePickerOpen((current) => !current)}>
+                  <ThemedText type="smallBold" style={styles.pickerButtonText}>
+                    {draft.dueDate || 'Pick date & time'}
+                  </ThemedText>
+                </Pressable>
               </View>
 
               <View style={styles.formCell}>
@@ -346,6 +460,78 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
+
+            {datePickerOpen ? (
+              <View style={styles.datePickerPanel}>
+                <View style={styles.pickerHeader}>
+                  <ThemedText type="smallBold" style={styles.pickerTitle}>
+                    Calendar + time
+                  </ThemedText>
+                  <Pressable onPress={() => setDatePickerOpen(false)}>
+                    <ThemedText type="smallBold" style={styles.pickerDoneText}>
+                      Done
+                    </ThemedText>
+                  </Pressable>
+                </View>
+                <View style={styles.pickerRow}>
+                  <PickerStepButton
+                    label="- Day"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setDate(date.getDate() - 1);
+                    })}
+                  />
+                  <View style={styles.datePreview}>
+                    <ThemedText type="smallBold" style={styles.datePreviewText}>
+                      {draft.dueDate || formatDateTime(parseDateTime(''))}
+                    </ThemedText>
+                  </View>
+                  <PickerStepButton
+                    label="+ Day"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setDate(date.getDate() + 1);
+                    })}
+                  />
+                </View>
+                <View style={styles.pickerGrid}>
+                  <PickerStepButton
+                    label="- Month"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setMonth(date.getMonth() - 1);
+                    })}
+                  />
+                  <PickerStepButton
+                    label="+ Month"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setMonth(date.getMonth() + 1);
+                    })}
+                  />
+                  <PickerStepButton
+                    label="- Hour"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setHours(date.getHours() - 1);
+                    })}
+                  />
+                  <PickerStepButton
+                    label="+ Hour"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setHours(date.getHours() + 1);
+                    })}
+                  />
+                  <PickerStepButton
+                    label="- 15m"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setMinutes(date.getMinutes() - 15);
+                    })}
+                  />
+                  <PickerStepButton
+                    label="+ 15m"
+                    onPress={() => adjustDraftDateTime((date) => {
+                      date.setMinutes(date.getMinutes() + 15);
+                    })}
+                  />
+                </View>
+              </View>
+            ) : null}
 
             <View style={styles.typeRow}>
               {currentMeta.typeOptions.map((option) => {
@@ -376,7 +562,12 @@ export default function HomeScreen() {
                 </ThemedText>
               </Pressable>
               {editingId ? (
-                <Pressable style={styles.secondaryButton} onPress={resetForm}>
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() => {
+                    resetForm();
+                    showToast('Edit cancelled.');
+                  }}>
                   <ThemedText type="smallBold" style={styles.secondaryButtonText}>
                     Cancel
                   </ThemedText>
@@ -408,9 +599,9 @@ export default function HomeScreen() {
               visibleItems.map((item) => (
                 <View key={item.id} style={styles.itemCard}>
                   <View style={styles.itemTopRow}>
-                    <Pressable onPress={() => toggleComplete(item.id)} style={styles.checkButton}>
+                    <Pressable onPress={() => toggleComplete(item.id)} style={styles.checkButton} hitSlop={8}>
                       <ThemedText type="smallBold" style={styles.checkButtonText}>
-                        {item.completed ? '✓' : '○'}
+                        {item.completed ? 'Done' : 'Todo'}
                       </ThemedText>
                     </Pressable>
                     <View style={styles.itemContent}>
@@ -421,20 +612,20 @@ export default function HomeScreen() {
                         {item.details || 'No details added'}
                       </ThemedText>
                       <ThemedText type="small" style={styles.mutedText}>
-                        {item.dueDate} • {item.type}
-                        {item.amount ? ` • ${item.amount}` : ''}
+                        {item.dueDate} | {item.type}
+                        {item.amount ? ` | ${item.amount}` : ''}
                       </ThemedText>
                     </View>
                   </View>
 
                   <View style={styles.itemActions}>
-                    <Pressable onPress={() => beginEdit(item)} style={styles.actionLink}>
+                    <Pressable onPress={() => beginEdit(item)} style={styles.actionLink} hitSlop={8}>
                       <ThemedText type="smallBold" style={styles.actionLinkText}>
                         Edit
                       </ThemedText>
                     </Pressable>
-                    <Pressable onPress={() => deleteItem(item.id)} style={styles.actionLink}>
-                      <ThemedText type="smallBold" style={styles.actionLinkText}>
+                    <Pressable onPress={() => deleteItem(item.id)} style={styles.deleteActionLink} hitSlop={8}>
+                      <ThemedText type="smallBold" style={styles.deleteActionLinkText}>
                         Delete
                       </ThemedText>
                     </Pressable>
@@ -444,8 +635,26 @@ export default function HomeScreen() {
             )}
           </View>
         </ScrollView>
+
+        {toast ? (
+          <View style={[styles.toast, toast.type === 'error' && styles.toastError]}>
+            <ThemedText type="smallBold" style={styles.toastText}>
+              {toast.text}
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
+  );
+}
+
+function PickerStepButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable style={styles.pickerStepButton} onPress={onPress}>
+      <ThemedText type="smallBold" style={styles.pickerStepText}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -471,7 +680,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: Spacing.three,
     backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    color: '#0f172a',
+  },
+  spinner: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 5,
+    borderColor: '#bfdbfe',
+    borderTopColor: '#2563eb',
   },
   heroCard: {
     padding: Spacing.four,
@@ -595,6 +816,71 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: Spacing.one,
   },
+  pickerButton: {
+    borderWidth: 1,
+    borderColor: '#dbe3ec',
+    borderRadius: Spacing.two,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+    backgroundColor: '#f8fafc',
+  },
+  pickerButtonText: {
+    color: '#0f172a',
+  },
+  datePickerPanel: {
+    padding: Spacing.two,
+    borderRadius: Spacing.three,
+    gap: Spacing.two,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    backgroundColor: '#f8fbff',
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pickerTitle: {
+    color: '#0f172a',
+  },
+  pickerDoneText: {
+    color: '#2563eb',
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  pickerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  pickerStepButton: {
+    minHeight: 36,
+    minWidth: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  pickerStepText: {
+    color: '#2563eb',
+  },
+  datePreview: {
+    flex: 1,
+    minHeight: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Spacing.two,
+    backgroundColor: '#dbeafe',
+  },
+  datePreviewText: {
+    color: '#1e3a8a',
+  },
   typeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -691,7 +977,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   checkButton: {
-    width: 32,
+    minWidth: 52,
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
@@ -702,6 +988,7 @@ const styles = StyleSheet.create({
   },
   checkButtonText: {
     color: '#0f172a',
+    fontSize: 12,
   },
   itemContent: {
     flex: 1,
@@ -716,7 +1003,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   itemActions: {
-    marginLeft: 40,
+    marginLeft: 60,
     flexDirection: 'row',
     gap: Spacing.three,
   },
@@ -725,5 +1012,35 @@ const styles = StyleSheet.create({
   },
   actionLinkText: {
     color: '#2563eb',
+  },
+  deleteActionLink: {
+    paddingVertical: Spacing.one,
+  },
+  deleteActionLinkText: {
+    color: '#dc2626',
+  },
+  toast: {
+    position: 'absolute',
+    left: Spacing.three,
+    right: Spacing.three,
+    bottom: Spacing.three,
+    minHeight: 46,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
+    backgroundColor: '#16a34a',
+    shadowColor: '#0f172a',
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  toastError: {
+    backgroundColor: '#dc2626',
+  },
+  toastText: {
+    color: '#ffffff',
+    textAlign: 'center',
   },
 });
