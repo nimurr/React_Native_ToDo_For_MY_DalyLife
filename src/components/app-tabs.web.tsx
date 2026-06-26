@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import {
     TabList,
     TabListProps,
@@ -6,7 +7,6 @@ import {
     TabTrigger,
     TabTriggerSlotProps,
 } from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from './themed-text';
@@ -21,10 +21,10 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton icon="house.fill">Planner</TabButton>
+            <TabButton iconSource={require('@/assets/images/tabIcons/home.png')}>Planner</TabButton>
           </TabTrigger>
           <TabTrigger name="explore" href="/explore" asChild>
-            <TabButton icon="chart.bar.fill">Insights</TabButton>
+            <TabButton iconSource={require('@/assets/images/tabIcons/explore.png')}>Insights</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
@@ -35,17 +35,13 @@ export default function AppTabs() {
 export function TabButton({
   children,
   isFocused,
-  icon,
+  iconSource,
   ...props
-}: TabTriggerSlotProps & { icon: string }) {
+}: TabTriggerSlotProps & { iconSource: any }) {
   return (
     <Pressable {...props} style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
       <ThemedView type={isFocused ? 'backgroundSelected' : 'backgroundElement'} style={styles.tabButtonView}>
-        <SymbolView
-          name={{ ios: icon, web: icon }}
-          size={16}
-          tintColor={isFocused ? '#2563eb' : '#64748b'}
-        />
+        <Image source={iconSource} style={styles.tabIcon} contentFit="contain" />
         <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
           {children}
         </ThemedText>
@@ -101,5 +97,9 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     minWidth: 100,
     justifyContent: 'center',
+  },
+  tabIcon: {
+    width: 16,
+    height: 16,
   },
 });
