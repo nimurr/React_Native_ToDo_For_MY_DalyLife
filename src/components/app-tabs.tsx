@@ -1,17 +1,18 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
-
-import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
-
   return (
     <NativeTabs
-      backgroundColor="#f8fafc"
-      indicatorColor="#2563eb"
-      labelStyle={{ selected: { color: '#2563eb' }, default: { color: '#64748b' } }}>
+      backgroundColor="#fffffff0"
+      blurEffect="systemChromeMaterialLight"
+      iconColor={{ selected: '#000000', default: '#000000' }}
+      indicatorColor="#dbeafe"
+      labelStyle={{
+        selected: { color: '#000000', fontWeight: '700' },
+        default: { color: '#000000', fontWeight: '600' },
+      }}
+      shadowColor="#dbe3ec"
+      tintColor="#000000">
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Planner</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
