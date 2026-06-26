@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   heroSubtitle: {
-    color: '#64748b',
+    color: '#000000',
     maxWidth: 560,
   },
   grid: {
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   cardLabel: {
-    color: '#64748b',
+    color: '#000000',
   },
   statNumber: {
     fontSize: 28,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   mutedText: {
-    color: '#64748b',
+    color: '#000000',
   },
   panelCard: {
     padding: Spacing.three,
@@ -182,21 +182,23 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderRadius: Spacing.four,
     gap: Spacing.one,
-    backgroundColor: '#0f172a',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   panelTitle: {
     color: '#111827',
   },
   panelTitleDark: {
-    color: '#f8fafc',
+    color: '#000000',
   },
   listItem: {
     paddingVertical: Spacing.one,
   },
   panelText: {
-    color: '#334155',
+    color: '#000000',
   },
   mutedTextDark: {
-    color: '#cbd5e1',
+    color: '#000000',
   },
 });
